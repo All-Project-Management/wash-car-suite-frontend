@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'auth/auth_controller.dart';
 import 'forgot_password_page.dart';
+import 'home_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -41,10 +42,18 @@ class _LoginPageState extends State<LoginPage> {
     FocusScope.of(context).unfocus();
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    await auth.login(
+    final ok = await auth.login(
       identity: _identityCtrl.text.trim(),
       password: _passwordCtrl.text,
     );
+
+    if (!mounted) return;
+
+    if (ok) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const HomePage()),
+      );
+    }
   }
 
   @override
@@ -165,9 +174,6 @@ class _LoginPageState extends State<LoginPage> {
                                     validator: (v) {
                                       final value = v ?? '';
                                       if (value.isEmpty) return 'Password is required';
-                                      if (value.length < 6) {
-                                        return 'Password must be at least 6 characters';
-                                      }
                                       return null;
                                     },
                                   ),

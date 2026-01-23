@@ -38,8 +38,12 @@ class _ResetPasswordFinishPageState extends State<ResetPasswordFinishPage> {
     FocusScope.of(context).unfocus();
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
+    // IMPORTANT: remove any spaces/newlines from pasted code
+    final normalizedKey =
+    _codeCtrl.text.trim().replaceAll(RegExp(r'\s+'), '');
+
     final ok = await widget.auth.finishPasswordReset(
-      code: _codeCtrl.text.trim(),
+      code: normalizedKey,
       newPassword: _passCtrl.text,
     );
 
@@ -98,9 +102,12 @@ class _ResetPasswordFinishPageState extends State<ResetPasswordFinishPage> {
                               ),
                             ),
                             const SizedBox(height: 14),
+
+                            // CODE
                             TextFormField(
                               controller: _codeCtrl,
                               enabled: !auth.resetLoading,
+                              textInputAction: TextInputAction.next,
                               decoration: const InputDecoration(
                                 labelText: 'Code',
                                 prefixIcon: Icon(Icons.confirmation_number_outlined),
@@ -108,15 +115,18 @@ class _ResetPasswordFinishPageState extends State<ResetPasswordFinishPage> {
                               validator: (v) {
                                 final value = (v ?? '').trim();
                                 if (value.isEmpty) return 'Code is required';
-                                if (value.length < 6) return 'Enter a valid code';
                                 return null;
                               },
                             ),
+
                             const SizedBox(height: 12),
+
+                            // NEW PASSWORD
                             TextFormField(
                               controller: _passCtrl,
                               enabled: !auth.resetLoading,
                               obscureText: _obscure1,
+                              textInputAction: TextInputAction.next,
                               decoration: InputDecoration(
                                 labelText: 'New password',
                                 prefixIcon: const Icon(Icons.lock_outline_rounded),
@@ -140,11 +150,17 @@ class _ResetPasswordFinishPageState extends State<ResetPasswordFinishPage> {
                                 return null;
                               },
                             ),
+
                             const SizedBox(height: 12),
+
+                            // CONFIRM PASSWORD
                             TextFormField(
                               controller: _confirmCtrl,
                               enabled: !auth.resetLoading,
                               obscureText: _obscure2,
+                              textInputAction: TextInputAction.done,
+                              onFieldSubmitted: (_) =>
+                              auth.resetLoading ? null : _submit(),
                               decoration: InputDecoration(
                                 labelText: 'Confirm new password',
                                 prefixIcon: const Icon(Icons.lock_outline_rounded),
@@ -166,6 +182,7 @@ class _ResetPasswordFinishPageState extends State<ResetPasswordFinishPage> {
                                 return null;
                               },
                             ),
+
                             if (auth.resetError != null) ...[
                               const SizedBox(height: 10),
                               Container(
@@ -182,6 +199,7 @@ class _ResetPasswordFinishPageState extends State<ResetPasswordFinishPage> {
                                 ),
                               ),
                             ],
+
                             const SizedBox(height: 14),
                             FilledButton(
                               onPressed: auth.resetLoading ? null : _submit,

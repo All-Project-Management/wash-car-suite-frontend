@@ -1,44 +1,42 @@
 class AuthUser {
-  final int id;
-  final String role;
-  final String fullName;
-  final String email;
-
-  const AuthUser({
-    required this.id,
-    required this.role,
-    required this.fullName,
+  AuthUser({
+    required this.login,
     required this.email,
+    required this.firstName,
+    required this.lastName,
+    required this.authorities,
   });
 
-  factory AuthUser.fromJHipsterAccountJson(Map<String, dynamic> j) {
-    final id = (j['id'] as num?)?.toInt() ?? 0;
-    final email = (j['email'] ?? '').toString();
+  final String login;
+  final String email;
+  final String firstName;
+  final String lastName;
 
-    final firstName = (j['firstName'] ?? '').toString().trim();
-    final lastName = (j['lastName'] ?? '').toString().trim();
-    final login = (j['login'] ?? '').toString().trim();
+  /// Comes from JHipster /api/account => "authorities": ["ROLE_USER","ROLE_ADMIN"]
+  final List<String> authorities;
 
-    final computedFullName = [
-      if (firstName.isNotEmpty) firstName,
-      if (lastName.isNotEmpty) lastName,
-    ].join(' ').trim();
+  String get fullName => ('${firstName.trim()} ${lastName.trim()}').trim();
 
-    final fullName =
-    computedFullName.isNotEmpty ? computedFullName : (login.isNotEmpty ? login : email);
+  bool get isAdmin => authorities.contains('ROLE_ADMIN');
+  bool get isUser => authorities.contains('ROLE_USER');
 
-    String role = '';
-    final authorities = j['authorities'];
-    if (authorities is List) {
-      final list = authorities.map((e) => e.toString()).toList();
-      if (list.isNotEmpty) role = list.first;
-    }
+  /// Label used in UI
+  String get roleLabel {
+    if (isAdmin) return 'ADMIN';
+    if (isUser) return 'USER';
+    return 'GUEST';
+  }
+
+  factory AuthUser.fromJHipsterAccountJson(Map<String, dynamic> json) {
+    final raw = json['authorities'];
+    final auths = (raw is List) ? raw.map((e) => e.toString()).toList() : <String>[];
 
     return AuthUser(
-      id: id,
-      role: role,
-      fullName: fullName,
-      email: email,
+      login: (json['login'] ?? '').toString(),
+      email: (json['email'] ?? '').toString(),
+      firstName: (json['firstName'] ?? '').toString(),
+      lastName: (json['lastName'] ?? '').toString(),
+      authorities: auths,
     );
   }
 }

@@ -3,7 +3,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'auth_api.dart';
 import 'auth_user.dart';
-
 class AuthController extends ChangeNotifier {
   AuthController({required String baseUrl}) : api = AuthApi(baseUrl: baseUrl) {
     _init();
@@ -71,7 +70,8 @@ class AuthController extends ChangeNotifier {
     await prefs.setString(_kSavedIdentityKey, identity);
   }
 
-  Future<void> login({
+  /// Returns true if login succeeded and account was loaded.
+  Future<bool> login({
     required String identity,
     required String password,
   }) async {
@@ -87,7 +87,6 @@ class AuthController extends ChangeNotifier {
       );
 
       _tokenInMemory = jwt;
-
       await _setSavedIdentity(identity.trim());
 
       final prefs = await SharedPreferences.getInstance();
@@ -99,24 +98,32 @@ class AuthController extends ChangeNotifier {
         await prefs.remove(_kAccessTokenKey);
       }
 
-      await tryAccount();
+      final ok = await tryAccount();
+      if (!ok) {
+        error = error ?? 'Login succeeded but failed to load account.';
+      }
+      return ok;
     } catch (e) {
       error = e.toString().replaceFirst('Exception: ', '');
+      return false;
     } finally {
       loading = false;
       notifyListeners();
     }
   }
 
-  Future<void> tryAccount() async {
+  /// Returns true if account was fetched and user was set.
+  Future<bool> tryAccount() async {
     try {
       final t = token;
-      if (t == null || t.isEmpty) return;
+      if (t == null || t.isEmpty) return false;
 
       final json = await api.getAccount(token: t);
       user = AuthUser.fromJHipsterAccountJson(json);
+      return true;
     } catch (_) {
       await logout();
+      return false;
     }
   }
 
